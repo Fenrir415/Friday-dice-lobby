@@ -30,6 +30,7 @@ is to make the deciding itself a small game everyone takes part in.
 - Dice lobby, not a wheel.
 - Each player rolls with their own button.
 - Hosted on Netlify, link shared in Discord.
+- Everyone watches each roll live: the dice tumble across a shared table on every screen before landing.
 
 ## Claude's calls (correctable)
 - Two six-sided dice per roll (totals 2–12): it feels like real dice, with fewer ties than one die.

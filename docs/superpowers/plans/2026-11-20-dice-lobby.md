@@ -112,7 +112,8 @@ Algorithm for `computeOutcome`: start with all players as candidates at depth 0.
   - Poll every 1000 ms.
   - Render all user text via `textContent` (Review Focus 4).
   - The Roll button disables itself until the next poll (Review Focus 1).
-  - There's a dice shake animation (~600 ms) when a new roll appears, a big winner panel, and Remove (✕) on rows that still need to roll.
+  - **Live dice table (Douglas's request):** a shared felt "table" panel. Whenever any player's roll count goes up on a poll, every screen queues an animation in `public/dice-anim.js`, `playRoll(tableEl, name, [d1,d2]) -> Promise<void>`. In it, two 3D CSS dice tumble and bounce across the table for ~1.6 s, land on the real faces, and show "<name> rolled <total>!". Animations play one after another if several arrive in the same poll. That player's total in the lobby list stays hidden ("🎲 …") until their animation finishes. The winner panel waits for the queue to empty. The roller's own screen starts tumbling the moment they click and lands when the server answers (at least 1.6 s). No animation is replayed for rolls that already existed when the page loaded.
+  - There's a big winner panel and Remove (✕) on rows that still need to roll.
   - Dark game-night styling that works on phones.
 - [ ] **Step 4:** `node --test test/` → pass. Open `public/index.html` in Playwright against a stubbed `/api/lobby` and screenshot it at desktop and phone widths to check the layout.
 - [ ] **Step 5:** Commit `feat: lobby page`
