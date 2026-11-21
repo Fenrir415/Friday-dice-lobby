@@ -73,3 +73,28 @@ test("empty lobby shows no clear button", () => {
   const s = { roundId: "r", players: [], outcome: { status: "waiting", winnerId: null, needsRoll: [] }, canReset: true };
   assert.equal(viewModel(s, "A").showNewRound, false);
 });
+
+import { arrivals, seatSlots, tabTitle } from "../public/view-model.mjs";
+
+test("arrivals: nothing announced on first load", () => {
+  assert.deepEqual(arrivals(null, [p("A", []), p("B", [])], "A"), []);
+});
+
+test("arrivals: new players announced, never myself", () => {
+  const got = arrivals(new Set(["A"]), [p("A", []), p("B", [], "Valheim"), p("C", [])], "C");
+  assert.deepEqual(got.map((x) => [x.name, x.game]), [["Bname", "Valheim"]]);
+});
+
+test("seatSlots: always 4 seats, filled in join order", () => {
+  const slots = seatSlots([p("A", []), p("B", [])], "B");
+  assert.equal(slots.length, 4);
+  assert.deepEqual(slots.map((s) => s.taken), [true, true, false, false]);
+  assert.equal(slots[0].initial, "A");
+  assert.equal(slots[1].isMe, true);
+  assert.equal(slots[2].name, null);
+});
+
+test("tabTitle shows seat count only when someone is seated", () => {
+  assert.equal(tabTitle([]), "Friday Night Dice");
+  assert.equal(tabTitle([p("A", []), p("B", [])]), "(2/4) Friday Night Dice");
+});

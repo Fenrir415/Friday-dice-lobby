@@ -1,11 +1,77 @@
-import { viewModel, mergeSeen } from "./view-model.mjs";
+import { viewModel, mergeSeen, arrivals, seatSlots, tabTitle } from "./view-model.mjs";
 import { playRoll } from "./dice-anim.js";
 
 const $ = (id) => document.getElementById(id);
 const els = {
   stage: $("stage"), call: $("call"), banner: $("banner"), join: $("join"), name: $("name"),
   game: $("game"), seats: $("seats"), roll: $("roll"), newRound: $("newRound"), note: $("note"),
+  tableSeats: $("tableSeats"), toasts: $("toasts"), alerts: $("alerts"),
 };
+
+// ---- Join alerts ----
+let knownIds = null;          // player ids already seen this round (null until first load)
+let knownRound = null;
+const justArrived = new Set(); // seats to animate on next render
+let audio = null;
+const unlockAudio = () => {
+  try { audio ??= new (window.AudioContext || window.webkitAudioContext)(); audio.resume?.(); } catch { /* no sound */ }
+};
+window.addEventListener("pointerdown", unlockAudio, { once: true });
+window.addEventListener("keydown", unlockAudio, { once: true });
+
+function chime() {
+  if (!audio || audio.state !== "running") return;
+  const t = audio.currentTime;
+  [660, 990].forEach((f, i) => {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.frequency.value = f; o.type = "triangle";
+    g.gain.setValueAtTime(0.0001, t + i * 0.12);
+    g.gain.exponentialRampToValueAtTime(0.18, t + i * 0.12 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.12 + 0.35);
+    o.connect(g).connect(audio.destination);
+    o.start(t + i * 0.12); o.stop(t + i * 0.12 + 0.4);
+  });
+}
+
+function toast(title, detail) {
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = title;
+  const small = document.createElement("small");
+  small.textContent = detail;
+  el.appendChild(small);
+  els.toasts.appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
+const canNotify = () => "Notification" in window;
+function refreshAlertsButton() {
+  els.alerts.hidden = !(canNotify() && Notification.permission === "default");
+}
+els.alerts.addEventListener("click", async () => {
+  try { await Notification.requestPermission(); } catch { /* unsupported */ }
+  refreshAlertsButton();
+  if (canNotify() && Notification.permission === "granted") toast("Join alerts are on", "You'll get a pop-up when someone sits down, while this page is open.");
+});
+refreshAlertsButton();
+
+function announceArrivals(s) {
+  if (knownRound !== s.roundId) {
+    // New round: everyone after this counts as a newcomer (but not on the very first load).
+    knownIds = knownRound === null ? null : new Set();
+    knownRound = s.roundId;
+  }
+  const fresh = arrivals(knownIds, s.players, myId);
+  for (const p of fresh) {
+    justArrived.add(p.id);
+    toast(`🎲 ${p.name} took a seat`, `Wants to play ${p.game}`);
+    if (document.hidden && canNotify() && Notification.permission === "granted") {
+      try { new Notification(`${p.name} took a seat`, { body: `Wants to play ${p.game}`, tag: `join-${p.id}` }); } catch { /* ignore */ }
+    }
+  }
+  if (fresh.length) chime();
+  knownIds = new Set(s.players.map((p) => p.id));
+}
 
 const storage = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
@@ -79,6 +145,27 @@ function render() {
   els.newRound.hidden = !(vm.showNewRound && !animating);
   els.newRound.textContent = vm.newRoundLabel;
 
+  document.title = tabTitle(state.players);
+  const chair = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 3v18M7 12h10M17 12v9M7 3h3"/></svg>';
+  els.tableSeats.replaceChildren(...seatSlots(state.players, myId).map((seat) => {
+    const li = document.createElement("li");
+    li.className = "table-seat";
+    li.classList.toggle("taken", seat.taken);
+    li.classList.toggle("me", seat.isMe);
+    li.classList.toggle("arrived", seat.taken && justArrived.has(seat.id));
+    const token = document.createElement("span");
+    token.className = "seat-token";
+    if (seat.taken) token.textContent = seat.initial; else token.innerHTML = chair;
+    li.appendChild(token);
+    li.setAttribute("aria-label", seat.taken ? `${seat.name} is seated` : "Empty seat");
+    const nm = document.createElement("span");
+    nm.className = seat.taken ? "seat-name" : "seat-name open";
+    nm.textContent = seat.taken ? (seat.isMe ? "You" : seat.name) : "Open";
+    li.appendChild(nm);
+    return li;
+  }));
+  justArrived.clear();
+
   els.seats.replaceChildren(...vm.rows.map((r) => {
     const li = document.createElement("li");
     li.className = "seat";
@@ -120,7 +207,7 @@ async function act(body) {
   try {
     const { ok, data } = await api(body);
     if (data.yourToken) { myToken = data.yourToken; storage.set("dice.token", myToken); }
-    if (data.players) { state = data; noticeRolls(data); render(); }
+    if (data.players) { state = data; announceArrivals(data); noticeRolls(data); render(); }
     if (!ok) note(data.error ?? "Something went wrong. Try again.");
     return { ok, data };
   } catch {
@@ -174,6 +261,7 @@ async function poll() {
     if (data.players) {
       if (state && state.roundId !== data.roundId) { els.stage.replaceChildren(); els.call.textContent = ""; }
       state = data;
+      announceArrivals(data);
       noticeRolls(data);
       render();
     }

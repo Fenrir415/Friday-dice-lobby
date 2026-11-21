@@ -12,11 +12,13 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
   <main class="room">
     <section class="table" aria-label="Dice table">
       <div class="felt" id="felt">
         <p class="felt-print" aria-hidden="true">Friday<br>Night</p>
         <div class="dice-stage" id="stage" aria-hidden="true"></div>
+        <ol class="table-seats" id="tableSeats" aria-label="Seats at the table"></ol>
         <p class="call" id="call" role="status" aria-live="polite"></p>
       </div>
     </section>
@@ -45,6 +47,7 @@
       <button class="roll" id="roll" type="button" hidden>Roll</button>
       <button class="btn ghost" id="newRound" type="button" hidden>Start a new round</button>
       <p class="note" id="note" role="alert"></p>
+      <button class="btn ghost alerts" id="alerts" type="button" hidden>🔔 Turn on join alerts</button>
       <p class="hint">2 to 4 players. Highest roll picks the game. Ties roll again.</p>
     </section>
   </main>

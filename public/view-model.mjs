@@ -65,3 +65,23 @@ export function viewModel(state, myId) {
 
 // Roll counts we've already animated only ever go up, so a stale poll can't re-queue a roll.
 export const mergeSeen = (prev, count) => Math.max(prev ?? 0, count);
+
+// Players who appeared since the last look (prevIds null = first load: announce nobody).
+export function arrivals(prevIds, players, myId) {
+  if (!prevIds) return [];
+  return players.filter((p) => !prevIds.has(p.id) && p.id !== myId);
+}
+
+// Four seats around the table, filled in join order.
+export function seatSlots(players, myId) {
+  return Array.from({ length: MAX_PLAYERS }, (_, i) => {
+    const p = players[i];
+    return p
+      ? { taken: true, id: p.id, name: p.name, initial: [...p.name.trim()][0]?.toUpperCase() ?? "?", isMe: p.id === myId }
+      : { taken: false, id: null, name: null, initial: null, isMe: false };
+  });
+}
+
+export function tabTitle(players) {
+  return players.length ? `(${players.length}/${MAX_PLAYERS}) Friday Night Dice` : "Friday Night Dice";
+}
