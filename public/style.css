@@ -66,7 +66,7 @@ body {
 .dice-stage {
   position: absolute;
   inset: 0;
-  perspective: 700px;
+  perspective: 1400px;
 }
 .call {
   position: absolute;
@@ -115,6 +115,8 @@ body {
 .f5 { transform: rotateY(-90deg) translateZ(calc(var(--die) / 2)); }
 .f3 { transform: rotateX(90deg) translateZ(calc(var(--die) / 2)); }
 .f4 { transform: rotateX(-90deg) translateZ(calc(var(--die) / 2)); }
+/* Once a die has landed face-up, its side faces would only show as hairlines at the edge. */
+.die.landed .face:not(.up) { visibility: hidden; }
 .shadow {
   position: absolute;
   width: var(--die); height: 14px;

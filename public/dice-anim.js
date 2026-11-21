@@ -99,6 +99,9 @@ export async function playRoll(stage, callEl, name, diceOrPromise, { minMs = 160
     d.die.style.transform = `translate(${d.restX}px, ${restY}px)`;
     d.shadow.style.transform = `translate(${d.restX}px, ${restY + size - 4}px)`;
     d.cube.style.transform = rot(SHOW[dice[i]]);
+    // Shade the sides so the visible edge reads as the die's side, not a stray line.
+    d.die.classList.add("landed");
+    d.cube.querySelector(`.f${dice[i]}`)?.classList.add("up");
   });
   callEl.textContent = `${name} rolled ${dice[0] + dice[1]}!`;
   await sleep(700);
