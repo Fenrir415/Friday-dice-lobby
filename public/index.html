@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Friday Night Dice</title>
+  <meta name="description" content="Roll for what we play tonight.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="room">
+    <section class="table" aria-label="Dice table">
+      <div class="felt" id="felt">
+        <p class="felt-print" aria-hidden="true">Friday<br>Night</p>
+        <div class="dice-stage" id="stage" aria-hidden="true"></div>
+        <p class="call" id="call" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="side">
+      <h1 class="banner" id="banner">Loading the table…</h1>
+
+      <form class="join" id="join" hidden>
+        <label>Your name
+          <input id="name" maxlength="24" autocomplete="nickname" required>
+        </label>
+        <label>What do you want to play?
+          <input id="game" maxlength="40" list="games" required>
+          <datalist id="games">
+            <option value="Dune: Awakening">
+            <option value="Palworld">
+            <option value="World of Warcraft">
+            <option value="Crimson Desert">
+          </datalist>
+        </label>
+        <button type="submit" class="btn">Take a seat</button>
+      </form>
+
+      <ol class="seats" id="seats" aria-label="Players"></ol>
+
+      <button class="roll" id="roll" type="button" hidden>Roll</button>
+      <button class="btn ghost" id="newRound" type="button" hidden>Start a new round</button>
+      <p class="note" id="note" role="alert"></p>
+      <p class="hint">2 to 4 players. Highest roll picks the game. Ties roll again.</p>
+    </section>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
