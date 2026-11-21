@@ -76,7 +76,8 @@ function render() {
   els.roll.hidden = !vm.canRoll;
   els.roll.disabled = busy || animating;
   els.roll.textContent = vm.status === "rolloff" ? "Roll again" : "Roll";
-  els.newRound.hidden = !showResult;
+  els.newRound.hidden = !(vm.showNewRound && !animating);
+  els.newRound.textContent = vm.newRoundLabel;
 
   els.seats.replaceChildren(...vm.rows.map((r) => {
     const li = document.createElement("li");

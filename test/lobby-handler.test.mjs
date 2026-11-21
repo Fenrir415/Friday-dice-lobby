@@ -179,3 +179,50 @@ test("simultaneous joins never exceed 4 players", async () => {
   assert.equal(players.length, 4);
   assert.deepEqual([d.status, e.status].sort(), [200, 409]);
 });
+
+// ---- Stuck solo lobby fix ----
+function setupClock(rngValues = [0.5]) {
+  const store = fakeStore();
+  const clock = { t: 1_000_000 };
+  const h = createHandler({ store, rng: seqRng(rngValues), now: () => clock.t });
+  const tokens = {};
+  const post = async (body) => {
+    if (body.playerId && tokens[body.playerId]) body = { ...body, token: tokens[body.playerId] };
+    const r = await h(new Request("http://x/api/lobby", { method: "POST", body: JSON.stringify(body) }));
+    const out = { status: r.status, body: await r.json() };
+    if (out.body.yourToken) tokens[body.playerId] = out.body.yourToken;
+    return out;
+  };
+  const get = async () => (await h(new Request("http://x/api/lobby"))).json();
+  return { post, get, clock };
+}
+
+test("solo player who rolled can clear the table", async () => {
+  const { post, get } = setupClock();
+  await post({ action: "join", playerId: "A", name: "Doug", game: "WoW" });
+  await post({ action: "roll", playerId: "A" });
+  assert.equal((await get()).canReset, true);
+  const r = await post({ action: "newRound" });
+  assert.equal(r.status, 200);
+  assert.deepEqual(r.body.players, []);
+});
+
+test("mid-round with 2+ players cannot be cleared while fresh", async () => {
+  const { post, get } = setupClock();
+  await post({ action: "join", playerId: "A", name: "A", game: "g" });
+  await post({ action: "join", playerId: "B", name: "B", game: "g" });
+  await post({ action: "roll", playerId: "A" });
+  assert.equal((await get()).canReset, false);
+  assert.equal((await post({ action: "newRound" })).status, 409);
+});
+
+test("a round untouched for 6 hours can be cleared", async () => {
+  const { post, get, clock } = setupClock();
+  await get(); // creates the round
+  await post({ action: "join", playerId: "A", name: "A", game: "g" });
+  await post({ action: "join", playerId: "B", name: "B", game: "g" });
+  await post({ action: "roll", playerId: "A" });
+  clock.t += 6 * 60 * 60 * 1000 + 1;
+  assert.equal((await get()).canReset, true);
+  assert.equal((await post({ action: "newRound" })).status, 200);
+});

@@ -57,7 +57,8 @@ export function viewModel(state, myId) {
     canRoll: joined && outcome.needsRoll.includes(myId),
     rows,
     banner,
-    showNewRound: outcome.status === "done",
+    showNewRound: (Boolean(state.canReset) || outcome.status === "done") && players.length > 0,
+    newRoundLabel: outcome.status === "done" ? "Start a new round" : "Clear the table",
     status: outcome.status,
   };
 }

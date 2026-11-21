@@ -56,3 +56,20 @@ test("mergeSeen never moves backwards (stale poll can't re-queue my roll)", () =
   assert.equal(mergeSeen(2, 3), 3);
   assert.equal(mergeSeen(undefined, 1), 1);
 });
+
+test("clear-table button shows for a solo player when the server allows reset", () => {
+  const s = { roundId: "r", players: [p("A", [[3, 5]])], outcome: { status: "waiting", winnerId: null, needsRoll: [] }, canReset: true };
+  const vm = viewModel(s, "A");
+  assert.equal(vm.showNewRound, true);
+  assert.equal(vm.newRoundLabel, "Clear the table");
+});
+
+test("winner screen keeps the new-round label", () => {
+  const s = { roundId: "r", players: [p("A", [[6, 5]]), p("B", [[1, 1]])], outcome: { status: "done", winnerId: "A", needsRoll: [] }, canReset: true };
+  assert.equal(viewModel(s, "A").newRoundLabel, "Start a new round");
+});
+
+test("empty lobby shows no clear button", () => {
+  const s = { roundId: "r", players: [], outcome: { status: "waiting", winnerId: null, needsRoll: [] }, canReset: true };
+  assert.equal(viewModel(s, "A").showNewRound, false);
+});
