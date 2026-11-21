@@ -3,6 +3,7 @@ import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, join } from "node:path";
 import { createHandler } from "../lib/lobby-handler.mjs";
+import { createWheelHandler } from "../lib/wheel-handler.mjs";
 
 const m = new Map();
 const store = {
@@ -12,19 +13,25 @@ const store = {
   async list({ prefix = "" } = {}) { return { blobs: [...m.keys()].filter((k) => k.startsWith(prefix)).map((key) => ({ key })) }; },
 };
 const handler = createHandler({ store });
-const types = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".mjs": "text/javascript" };
+const wheel = createWheelHandler({ store });
+const routes = { "/api/lobby": handler, "/api/wheel": wheel };
+const types = { ".svg": "image/svg+xml", ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".mjs": "text/javascript" };
 const port = Number(process.argv[2] ?? 8888);
 
 http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${port}`);
-  if (url.pathname === "/api/lobby") {
+  const api = routes[url.pathname];
+  if (api) {
     const chunks = [];
     for await (const c of req) chunks.push(c);
-    const r = await handler(new Request(url, { method: req.method, headers: req.headers, body: req.method === "POST" ? Buffer.concat(chunks) : undefined }));
+    const r = await api(new Request(url, { method: req.method, headers: req.headers, body: req.method === "POST" ? Buffer.concat(chunks) : undefined }));
     res.writeHead(r.status, Object.fromEntries(r.headers));
     return res.end(await r.text());
   }
-  const file = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
+  // Like Netlify: /dice and /dice/ serve public/dice/index.html.
+  let file = url.pathname.replace(/^\/+/, "");
+  if (file === "" || file.endsWith("/")) file += "index.html";
+  else if (!extname(file)) file += "/index.html";
   try {
     const body = await readFile(join("public", file));
     res.writeHead(200, { "content-type": types[extname(file)] ?? "application/octet-stream" });

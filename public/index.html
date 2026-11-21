@@ -3,54 +3,71 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Friday Night Dice</title>
-  <meta name="description" content="Roll for what we play tonight.">
+  <title>Friday Night Games</title>
+  <meta name="description" content="Pick tonight's game: roll dice or spin the wheel.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/shared/base.css">
+  <style>
+    .picker { max-width: 900px; margin: 0 auto; padding: 48px 20px 60px; }
+    h1 { font: 400 clamp(40px, 7vw, 72px)/1 var(--display); color: var(--bone); margin: 0 0 10px; }
+    .lede { color: var(--muted); margin: 0 0 36px; font-size: 19px; }
+    .games { list-style: none; padding: 0; margin: 0; display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .game {
+      display: block; text-decoration: none; color: inherit;
+      padding: 14px; border-radius: 34px;
+      background: linear-gradient(160deg, #7a4a2c, var(--walnut) 40%, var(--walnut-dark));
+      box-shadow: inset 0 2px 0 rgba(255,255,255,.12), 0 18px 40px rgba(0,0,0,.5);
+      transition: transform .15s ease;
+    }
+    .game:hover { transform: translateY(-3px); }
+    .game:active { transform: translateY(1px); }
+    .felt {
+      border-radius: 24px; padding: 26px 24px 24px; min-height: 230px;
+      background: radial-gradient(ellipse at 50% 40%, #13604a 0%, var(--felt) 60%, var(--felt-deep) 100%);
+      box-shadow: inset 0 0 0 2px rgba(201,162,75,.3), inset 0 8px 30px rgba(0,0,0,.4);
+      display: grid; align-content: space-between; gap: 18px;
+    }
+    .game svg { width: 84px; height: 84px; }
+    .game h2 { font: 400 44px/1 var(--display); color: var(--bone); margin: 0; }
+    .game p { margin: 6px 0 0; color: #cfe3d9; }
+    @media (prefers-reduced-motion: reduce) { .game { transition: none; } }
+  </style>
 </head>
 <body>
-  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
-  <main class="room">
-    <section class="table" aria-label="Dice table">
-      <div class="felt" id="felt">
-        <p class="felt-print" aria-hidden="true">Friday<br>Night</p>
-        <div class="dice-stage" id="stage" aria-hidden="true"></div>
-        <ol class="table-seats" id="tableSeats" aria-label="Seats at the table"></ol>
-        <p class="call" id="call" role="status" aria-live="polite"></p>
-      </div>
-    </section>
-
-    <section class="side">
-      <h1 class="banner" id="banner">Loading the table…</h1>
-
-      <form class="join" id="join" hidden>
-        <label>Your name
-          <input id="name" maxlength="24" autocomplete="nickname" required>
-        </label>
-        <label>What do you want to play?
-          <input id="game" maxlength="40" list="games" required>
-          <datalist id="games">
-            <option value="World of Warcraft">
-            <option value="Valheim">
-            <option value="Age of Empires 4">
-            <option value="Enshrouded">
-          </datalist>
-        </label>
-        <button type="submit" class="btn">Take a seat</button>
-      </form>
-
-      <ol class="seats" id="seats" aria-label="Players"></ol>
-
-      <button class="roll" id="roll" type="button" hidden>Roll</button>
-      <button class="btn ghost" id="newRound" type="button" hidden>Start a new round</button>
-      <p class="note" id="note" role="alert"></p>
-      <button class="btn ghost alerts" id="alerts" type="button" hidden>🔔 Turn on join alerts</button>
-      <p class="hint">2 to 4 players. Highest roll picks the game. Ties roll again.</p>
-    </section>
+  <main class="picker">
+    <h1>Friday Night</h1>
+    <p class="lede">What are we deciding with tonight?</p>
+    <ul class="games" id="games"></ul>
   </main>
-  <script type="module" src="app.js"></script>
+  <script type="module">
+    import { GAMES } from "/games.js";
+    const ICONS = {
+      dice: `<svg viewBox="0 0 84 84" aria-hidden="true"><rect x="6" y="18" width="44" height="44" rx="9" fill="#f2eadb" transform="rotate(-12 28 40)"/><g fill="#8c1c2b" transform="rotate(-12 28 40)"><circle cx="18" cy="30" r="4"/><circle cx="28" cy="40" r="4"/><circle cx="38" cy="50" r="4"/></g><rect x="38" y="28" width="40" height="40" rx="8" fill="#e6dcc8" transform="rotate(10 58 48)"/><g fill="#8c1c2b" transform="rotate(10 58 48)"><circle cx="49" cy="39" r="3.6"/><circle cx="67" cy="39" r="3.6"/><circle cx="49" cy="57" r="3.6"/><circle cx="67" cy="57" r="3.6"/></g></svg>`,
+      wheel: `<svg viewBox="0 0 84 84" aria-hidden="true"><g transform="translate(42 46)"><path d="M0 0 L0 -34 A34 34 0 0 1 29.4 -17 Z" fill="#c9a24b"/><path d="M0 0 L29.4 -17 A34 34 0 0 1 29.4 17 Z" fill="#8c1c2b"/><path d="M0 0 L29.4 17 A34 34 0 0 1 0 34 Z" fill="#f2eadb"/><path d="M0 0 L0 34 A34 34 0 0 1 -29.4 17 Z" fill="#c9a24b"/><path d="M0 0 L-29.4 17 A34 34 0 0 1 -29.4 -17 Z" fill="#8c1c2b"/><path d="M0 0 L-29.4 -17 A34 34 0 0 1 0 -34 Z" fill="#f2eadb"/><circle r="6" fill="#3a2114"/></g><path d="M42 16 L35 3 H49 Z" fill="#f2eadb"/></svg>`,
+    };
+    const list = document.getElementById("games");
+    for (const g of GAMES) {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.className = "game";
+      a.href = g.path;
+      const felt = document.createElement("div");
+      felt.className = "felt";
+      felt.innerHTML = ICONS[g.icon] ?? "";
+      const text = document.createElement("div");
+      const h2 = document.createElement("h2");
+      h2.textContent = g.name;
+      const p = document.createElement("p");
+      p.textContent = g.blurb;
+      text.append(h2, p);
+      felt.appendChild(text);
+      a.appendChild(felt);
+      li.appendChild(a);
+      list.appendChild(li);
+    }
+  </script>
 </body>
 </html>

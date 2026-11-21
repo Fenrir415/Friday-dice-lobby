@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { viewModel } from "../public/view-model.mjs";
+import { viewModel } from "../public/dice/view-model.mjs";
 
 const p = (id, rolls, game = "g" + id) => ({ id, name: id + "name", game, rolls, joinedAt: 0 });
 const st = (players, outcome) => ({ roundId: "r1", players, outcome });
@@ -50,7 +50,7 @@ test("roll-off excludes the player who lost the first roll", () => {
   assert.equal(vm.banner, "Tie! Roll-off: Aname, Bname");
 });
 
-import { mergeSeen } from "../public/view-model.mjs";
+import { mergeSeen } from "../public/dice/view-model.mjs";
 test("mergeSeen never moves backwards (stale poll can't re-queue my roll)", () => {
   assert.equal(mergeSeen(3, 2), 3);
   assert.equal(mergeSeen(2, 3), 3);
@@ -74,7 +74,7 @@ test("empty lobby shows no clear button", () => {
   assert.equal(viewModel(s, "A").showNewRound, false);
 });
 
-import { arrivals, seatSlots, tabTitle } from "../public/view-model.mjs";
+import { arrivals, seatSlots, tabTitle } from "../public/dice/view-model.mjs";
 
 test("arrivals: nothing announced on first load", () => {
   assert.deepEqual(arrivals(null, [p("A", []), p("B", [])], "A"), []);

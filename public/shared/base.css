@@ -1,0 +1,45 @@
+/* Shared look for every game: walnut room, green felt, bone and brass. */
+:root {
+  --felt: #0e4a38;
+  --felt-deep: #0a3729;
+  --walnut: #5b3520;
+  --walnut-dark: #3a2114;
+  --bone: #f2eadb;
+  --oxblood: #8c1c2b;
+  --brass: #c9a24b;
+  --ink: #efe7d6;
+  --muted: #b9ae98;
+  --display: "Alfa Slab One", "Rockwell", "Roboto Slab", Georgia, serif;
+  --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 50% 0%, #2a1a10 0%, #1a100a 70%);
+  color: var(--ink);
+  font: 500 17px/1.5 var(--body);
+}
+a { color: var(--bone); }
+:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+.back {
+  display: inline-block;
+  margin: 14px 18px 0;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 15px;
+}
+.back:hover { color: var(--bone); }
+.btn {
+  font: 700 17px var(--body);
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: 0;
+  background: var(--bone);
+  color: #2a1a10;
+  cursor: pointer;
+}
+.btn.ghost { background: transparent; color: var(--bone); border: 1px solid #6b5640; }
+.btn:disabled { opacity: .5; cursor: default; }

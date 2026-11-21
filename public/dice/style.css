@@ -195,6 +195,8 @@ body {
 .roll:active { transform: translateY(4px); box-shadow: 0 2px 0 #6e521c; }
 .roll:disabled { filter: grayscale(.5) brightness(.75); cursor: default; }
 
+.back { display: inline-block; margin: 14px 18px 0; color: var(--muted); text-decoration: none; font-weight: 700; font-size: 15px; }
+.back:hover { color: var(--bone); }
 .note { color: #f0a7a7; min-height: 1.5em; margin: 10px 0 0; }
 .hint { color: var(--muted); font-size: 14px; margin: 18px 0 0; }
 
