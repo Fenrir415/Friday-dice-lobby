@@ -61,3 +61,6 @@ export function viewModel(state, myId) {
     status: outcome.status,
   };
 }
+
+// Roll counts we've already animated only ever go up, so a stale poll can't re-queue a roll.
+export const mergeSeen = (prev, count) => Math.max(prev ?? 0, count);

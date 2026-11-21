@@ -49,3 +49,10 @@ test("roll-off excludes the player who lost the first roll", () => {
   assert.deepEqual(vm.rows.filter((r) => r.inRollOff).map((r) => r.id), ["A", "B"]);
   assert.equal(vm.banner, "Tie! Roll-off: Aname, Bname");
 });
+
+import { mergeSeen } from "../public/view-model.mjs";
+test("mergeSeen never moves backwards (stale poll can't re-queue my roll)", () => {
+  assert.equal(mergeSeen(3, 2), 3);
+  assert.equal(mergeSeen(2, 3), 3);
+  assert.equal(mergeSeen(undefined, 1), 1);
+});

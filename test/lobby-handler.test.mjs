@@ -21,9 +21,13 @@ function setup(rngValues = [0.5]) {
   let t = 1000;
   const h = createHandler({ store, rng: seqRng(rngValues), now: () => t++ });
   const get = async () => { const r = await h(new Request("http://x/api/lobby")); return { status: r.status, body: await r.json() }; };
-  const post = async (body) => {
+  const tokens = {};
+  const post = async (body, { raw = false } = {}) => {
+    if (!raw && body.playerId && tokens[body.playerId] && !("token" in body)) body = { ...body, token: tokens[body.playerId] };
     const r = await h(new Request("http://x/api/lobby", { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json" } }));
-    return { status: r.status, body: await r.json() };
+    const out = { status: r.status, body: await r.json() };
+    if (out.body.yourToken && body.playerId) tokens[body.playerId] = out.body.yourToken;
+    return out;
   };
   return { store, get, post };
 }
@@ -86,7 +90,7 @@ test("winner, then joins and removes refused", async () => {
   assert.equal((await post({ action: "remove", playerId: "B" })).status, 409);
 });
 
-test("tie roll-off: tied can roll, untied cannot; removing tied player resolves", async () => {
+test("tie roll-off: tied can roll, untied cannot; removing the AFK tied player resolves", async () => {
   // A=6+6, B=6+6, C=1+1
   const { post } = setup([0.999, 0.999, 0.999, 0.999, 0, 0]);
   for (const id of ["A", "B", "C"]) await post({ action: "join", playerId: id, name: id, game: "g" + id });
@@ -97,9 +101,10 @@ test("tie roll-off: tied can roll, untied cannot; removing tied player resolves"
   assert.deepEqual(r.body.outcome.needsRoll, ["A", "B"]);
   r = await post({ action: "roll", playerId: "B" }); // B goes first in roll-off: allowed
   assert.equal(r.status, 200);
-  r = await post({ action: "remove", playerId: "B" });
+  assert.equal((await post({ action: "remove", playerId: "B" })).status, 409); // B already rolled off
+  r = await post({ action: "remove", playerId: "A" }); // A went AFK in the roll-off
   assert.equal(r.body.outcome.status, "done");
-  assert.equal(r.body.outcome.winnerId, "A");
+  assert.equal(r.body.outcome.winnerId, "B");
 });
 
 test("new round only when done, clears players and changes roundId", async () => {
@@ -128,4 +133,49 @@ test("bad input", async () => {
   const { post } = setup();
   assert.equal((await post({ action: "nope" })).status, 400);
   assert.equal((await post({ action: "roll" })).status, 400);
+});
+
+// ---- Final review fixes ----
+const tok = (r, id) => r.body.yourToken;
+
+test("tokens: hidden from GET, required to roll or change pick", async () => {
+  const { get, post } = setup();
+  const a = await post({ action: "join", playerId: "A", name: "A", game: "g" });
+  assert.ok(typeof tok(a) === "string" && tok(a).length >= 16);
+  await post({ action: "join", playerId: "B", name: "B", game: "g" });
+  const g = await get();
+  assert.ok(g.body.players.every((p) => !("token" in p)));
+  assert.equal(g.body.yourToken, undefined);
+  assert.equal((await post({ action: "roll", playerId: "A" }, { raw: true })).status, 403);
+  assert.equal((await post({ action: "roll", playerId: "A", token: "wrong" })).status, 403);
+  assert.equal((await post({ action: "join", playerId: "A", name: "A", game: "hijack" }, { raw: true })).status, 403);
+  assert.equal((await post({ action: "roll", playerId: "A", token: tok(a) })).status, 200);
+});
+
+test("cannot remove a player who already rolled (no remove-and-rejoin re-roll)", async () => {
+  const { post } = setup();
+  const a = await post({ action: "join", playerId: "A", name: "A", game: "g" });
+  await post({ action: "join", playerId: "B", name: "B", game: "g" });
+  await post({ action: "roll", playerId: "A", token: tok(a) });
+  assert.equal((await post({ action: "remove", playerId: "A" })).status, 409);
+});
+
+test("name already taken by another player is refused", async () => {
+  const { post } = setup();
+  await post({ action: "join", playerId: "A", name: "Doug", game: "g" });
+  const r = await post({ action: "join", playerId: "Z", name: " doug ", game: "g" });
+  assert.equal(r.status, 409);
+  assert.equal(r.body.error, "Name taken");
+});
+
+test("simultaneous joins never exceed 4 players", async () => {
+  const { post, get } = setup();
+  for (const id of ["A", "B", "C"]) await post({ action: "join", playerId: id, name: id, game: "g" });
+  const [d, e] = await Promise.all([
+    post({ action: "join", playerId: "D", name: "D", game: "g" }),
+    post({ action: "join", playerId: "E", name: "E", game: "g" }),
+  ]);
+  const players = (await get()).body.players;
+  assert.equal(players.length, 4);
+  assert.deepEqual([d.status, e.status].sort(), [200, 409]);
 });

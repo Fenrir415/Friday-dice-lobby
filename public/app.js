@@ -1,4 +1,4 @@
-import { viewModel } from "./view-model.mjs";
+import { viewModel, mergeSeen } from "./view-model.mjs";
 import { playRoll } from "./dice-anim.js";
 
 const $ = (id) => document.getElementById(id);
@@ -15,6 +15,7 @@ const newId = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()
 let myId = storage.get("dice.playerId");
 if (!myId) { myId = newId(); storage.set("dice.playerId", myId); }
 els.name.value = storage.get("dice.name") ?? "";
+let myToken = storage.get("dice.token");
 
 let state = null;
 const seen = new Map();          // "round/player" -> roll count already shown
@@ -43,7 +44,7 @@ function noticeRolls(s) {
       queue.push({ id: p.id, name: p.name, dice: p.rolls[i] });
       pending.add(p.id);
     }
-    seen.set(key, p.rolls.length);
+    seen.set(key, mergeSeen(seen.get(key), p.rolls.length));
   }
   firstLoad = false;
   drain();
@@ -117,6 +118,7 @@ async function act(body) {
   note("");
   try {
     const { ok, data } = await api(body);
+    if (data.yourToken) { myToken = data.yourToken; storage.set("dice.token", myToken); }
     if (data.players) { state = data; noticeRolls(data); render(); }
     if (!ok) note(data.error ?? "Something went wrong. Try again.");
     return { ok, data };
@@ -129,7 +131,7 @@ async function act(body) {
 els.join.addEventListener("submit", async (e) => {
   e.preventDefault();
   storage.set("dice.name", els.name.value.trim());
-  await act({ action: "join", playerId: myId, name: els.name.value, game: els.game.value });
+  await act({ action: "join", playerId: myId, name: els.name.value, game: els.game.value, token: myToken });
 });
 
 els.roll.addEventListener("click", async () => {
@@ -141,7 +143,7 @@ els.roll.addEventListener("click", async () => {
   // Mark our next roll as seen so the poll doesn't animate it a second time.
   seen.set(key, (me?.rolls.length ?? 0) + 1);
   pending.add(myId);
-  const result = act({ action: "roll", playerId: myId }).then(({ ok, data }) => {
+  const result = act({ action: "roll", playerId: myId, token: myToken }).then(({ ok, data }) => {
     if (!ok) { seen.set(key, me?.rolls.length ?? 0); throw new Error("roll failed"); }
     const mine = data.players.find((p) => p.id === myId);
     return mine.rolls[mine.rolls.length - 1];
