@@ -1,0 +1,56 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { finalRotation, rotationAt, sliceAtArrow } from "../public/spin/wheel-math.mjs";
+import { planSpin } from "../lib/wheel-logic.mjs";
+
+const plan = (style, n, winnerIndex, landFraction = 0.5) => ({ id: "x", startAt: 1000, durationMs: 6000, turns: 5, winnerIndex, landFraction, style });
+
+test("arrow lands on the planned winner for every style and size", () => {
+  for (let k = 0; k < 400; k++) {
+    const n = 2 + (k % 11);
+    const s = planSpin({ names: Array.from({ length: n }, (_, i) => "n" + i), rng: Math.random, now: 0 });
+    assert.equal(sliceAtArrow(finalRotation(s, n), n), s.winnerIndex, JSON.stringify(s));
+    assert.equal(sliceAtArrow(rotationAt(s, n, s.startAt + s.durationMs + 50), n), s.winnerIndex);
+  }
+});
+
+test("before start the wheel is still; after the end it rests on the final rotation", () => {
+  const s = plan("normal", 4, 2);
+  assert.equal(rotationAt(s, 4, 0), 0);
+  assert.equal(rotationAt(s, 4, s.startAt), 0);
+  assert.equal(rotationAt(s, 4, s.startAt + s.durationMs), finalRotation(s, 4));
+  assert.equal(rotationAt(s, 4, s.startAt + s.durationMs * 5), finalRotation(s, 4));
+});
+
+test("the wheel only turns one way (no jumps backwards)", () => {
+  for (const style of ["normal", "rocket", "crawl", "nudge"]) {
+    const s = plan(style, 6, 3, style === "crawl" ? 0.03 : 0.5);
+    let prev = -1;
+    for (let t = s.startAt; t <= s.startAt + s.durationMs; t += 20) {
+      const r = rotationAt(s, 6, t);
+      assert.ok(r >= prev - 1e-9, `${style} went backwards at ${t}`);
+      prev = r;
+    }
+  }
+});
+
+test("nudge: pauses on the neighbouring slice, then nudges onto the winner", () => {
+  const n = 6, s = plan("nudge", n, 2, 0.4);
+  const paused = rotationAt(s, n, s.startAt + s.durationMs * 0.86);
+  assert.equal(sliceAtArrow(paused, n), 3);
+  assert.equal(sliceAtArrow(rotationAt(s, n, s.startAt + s.durationMs), n), 2);
+});
+
+test("crawl: still moving slowly near the end, crossing into the winner late", () => {
+  const n = 5, s = plan("crawl", n, 1, 0.03);
+  const late = rotationAt(s, n, s.startAt + s.durationMs * 0.97);
+  const end = rotationAt(s, n, s.startAt + s.durationMs);
+  assert.ok(end - late > 0 && end - late < 360 / n);
+});
+
+test("sliceAtArrow wraps correctly", () => {
+  assert.equal(sliceAtArrow(0, 4), 0);
+  assert.equal(sliceAtArrow(-1, 4), 0);
+  assert.equal(sliceAtArrow(1, 4), 3);
+  assert.equal(sliceAtArrow(360 * 3 + 1, 4), 3);
+});
