@@ -4,6 +4,14 @@
 // The arrow is fixed at the top.
 
 const mod = (a, m) => ((a % m) + m) % m;
+
+// The wheel always has at least MIN_SLICES slices, and every name gets the same number of them
+// (2 names -> 12 slices, 5 -> 15, 8 -> 16), so a short list still makes a full, fair wheel.
+export const MIN_SLICES = 12;
+export const sliceCount = (k) => (k < 1 ? 0 : k * Math.ceil(MIN_SLICES / k));
+export const nameForSlice = (names, i) => names[mod(i, names.length)];
+// Slice count for a spin: recorded in the plan; older plans (before this change) used one slice per name.
+export const spinSlices = (spin, k) => spin?.slices ?? k;
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
 const easeOutCubic = (p) => 1 - (1 - p) ** 3;
 const easeOutQuart = (p) => 1 - (1 - p) ** 4;

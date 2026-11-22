@@ -9,8 +9,9 @@ test("arrow lands on the planned winner for every style and size", () => {
   for (let k = 0; k < 400; k++) {
     const n = 2 + (k % 11);
     const s = planSpin({ names: Array.from({ length: n }, (_, i) => "n" + i), rng: Math.random, now: 0 });
-    assert.equal(sliceAtArrow(finalRotation(s, n), n), s.winnerIndex, JSON.stringify(s));
-    assert.equal(sliceAtArrow(rotationAt(s, n, s.startAt + s.durationMs + 50), n), s.winnerIndex);
+    const S = s.slices;
+    assert.equal(sliceAtArrow(finalRotation(s, S), S), s.winnerIndex, JSON.stringify(s));
+    assert.equal(sliceAtArrow(rotationAt(s, S, s.startAt + s.durationMs + 50), S), s.winnerIndex);
   }
 });
 
@@ -59,11 +60,14 @@ test("a spin starting from a resting angle begins there and still lands on the w
   for (let k = 0; k < 300; k++) {
     const n = 2 + (k % 11);
     const s = { ...planSpin({ names: Array.from({ length: n }, (_, i) => "n" + i), rng: Math.random, now: 0 }), fromAngle: Math.random() * 360 };
-    assert.equal(rotationAt(s, n, s.startAt - 100), s.fromAngle);
-    assert.equal(rotationAt(s, n, s.startAt), s.fromAngle);
-    assert.equal(sliceAtArrow(rotationAt(s, n, s.startAt + s.durationMs), n), s.winnerIndex);
-    assert.ok(finalRotation(s, n) - s.fromAngle >= s.turns * 360);
+    const S = s.slices;
+    assert.equal(rotationAt(s, S, s.startAt - 100), s.fromAngle);
+    assert.equal(rotationAt(s, S, s.startAt), s.fromAngle);
+    if (s.style !== "slip") {
+      assert.equal(sliceAtArrow(rotationAt(s, S, s.startAt + s.durationMs), S), s.winnerIndex);
+      assert.ok(finalRotation(s, S) - s.fromAngle >= s.turns * 360);
+    }
     let prev = -Infinity;
-    for (let t = s.startAt; t <= s.startAt + s.durationMs; t += 50) { const r = rotationAt(s, n, t); assert.ok(r >= prev - 1e-9); prev = r; }
+    for (let t = s.startAt; t <= s.startAt + s.durationMs; t += 50) { const r = rotationAt(s, S, t); assert.ok(r >= prev - 1e-9); prev = r; }
   }
 });

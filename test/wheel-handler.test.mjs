@@ -114,5 +114,5 @@ test("next spin starts from where the last one stopped", async () => {
   clock.t = first.startAt + first.durationMs + 10;
   const second = (await post({ action: "spin" })).body.spin;
   const { finalRotation } = await import("../public/spin/wheel-math.mjs");
-  assert.equal(second.fromAngle, ((finalRotation(first, 3) % 360) + 360) % 360);
+  assert.equal(second.fromAngle, ((finalRotation(first, first.slices) % 360) + 360) % 360);
 });

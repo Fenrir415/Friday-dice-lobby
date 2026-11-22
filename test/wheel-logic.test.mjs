@@ -33,7 +33,7 @@ test("planSpin: shape, start lead, winner in range", () => {
   for (let k = 0; k < 200; k++) {
     const s = planSpin({ names: ["a", "b", "c", "d", "e"], rng: Math.random, now: 5000 });
     assert.equal(s.startAt, 5000 + LEAD_MS);
-    assert.ok(Number.isInteger(s.winnerIndex) && s.winnerIndex >= 0 && s.winnerIndex < 5);
+    assert.ok(Number.isInteger(s.winnerIndex) && s.winnerIndex >= 0 && s.winnerIndex < s.slices);
     assert.ok(s.landFraction > 0 && s.landFraction < 1);
     if (s.style === "slip") {
       assert.equal(s.turns, 0);
@@ -65,7 +65,7 @@ test("slip is one of the funny spins", () => {
 
 test("slip: barely moves, landing on the very next slice from where the wheel rests", () => {
   const names = ["a", "b", "c", "d", "e"];
-  const n = names.length, w = 360 / n;
+  const n = 15, w = 360 / n; // 5 names fill 15 slices
   for (let k = 0; k < 200; k++) {
     const fromAngle = Math.random() * 360;
     const pickSlip = FS.indexOf("slip") / FS.length + 0.001;

@@ -18,7 +18,7 @@ export function sliceColors(n) {
 }
 
 export function labelSize(n, name) {
-  const base = n <= 4 ? 30 : n <= 6 ? 26 : n <= 9 ? 21 : 17;
+  const base = n <= 4 ? 30 : n <= 6 ? 26 : n <= 9 ? 21 : n <= 12 ? 17 : n <= 16 ? 15 : 13;
   const len = [...name].length;
   return Math.max(11, Math.round(len > 10 ? base * (10 / len) ** 0.7 : base));
 }

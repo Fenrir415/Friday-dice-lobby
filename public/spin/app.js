@@ -1,4 +1,4 @@
-import { rotationAt, sliceAtArrow, resultMessage } from "/spin/wheel-math.mjs";
+import { rotationAt, sliceAtArrow, resultMessage, sliceCount, nameForSlice, spinSlices } from "/spin/wheel-math.mjs";
 import { sliceColors, labelSize } from "/spin/wheel-look.mjs";
 import { createClock } from "/spin/clock.mjs";
 
@@ -8,7 +8,7 @@ const els = {
   pointer: $("pointer"), result: $("result"), spinBtn: $("spinBtn"),
   namesView: $("namesView"), namesList: $("namesList"), editBtn: $("editBtn"),
   editor: $("editor"), namesInput: $("namesInput"), count: $("count"), acceptBtn: $("acceptBtn"), cancelBtn: $("cancelBtn"),
-  note: $("note"),
+  note: $("note"), slicesInfo: $("slicesInfo"),
 };
 const SVG = "http://www.w3.org/2000/svg";
 const R_SLICE = 214;
@@ -73,14 +73,17 @@ function drawWheel(names) {
     return;
   }
 
-  const w = 360 / n;
-  const colors = sliceColors(n);
-  names.forEach((name, i) => {
+  // Fill the whole wheel: names repeat in order, each name keeps one colour.
+  const S = sliceCount(n);
+  const w = 360 / S;
+  const nameColors = sliceColors(n);
+  const slices = Array.from({ length: S }, (_, i) => ({ name: nameForSlice(names, i), color: nameColors[i % n] }));
+  slices.forEach(({ name, color }, i) => {
     const [x1, y1] = polar(R_SLICE, i * w);
     const [x2, y2] = polar(R_SLICE, (i + 1) * w);
     const path = document.createElementNS(SVG, "path");
     path.setAttribute("d", `M0 0 L${x1.toFixed(2)} ${y1.toFixed(2)} A${R_SLICE} ${R_SLICE} 0 ${w > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`);
-    path.setAttribute("fill", colors[i].fill);
+    path.setAttribute("fill", color.fill);
     path.setAttribute("stroke", "#fff4d6"); path.setAttribute("stroke-width", "2");
     els.slices.appendChild(path);
 
@@ -91,9 +94,9 @@ function drawWheel(names) {
     text.setAttribute("transform", `rotate(${mid}) translate(0 ${-R_SLICE + 18}) rotate(90)`);
     text.setAttribute("text-anchor", "start");
     text.setAttribute("dominant-baseline", "central");
-    text.setAttribute("font-size", labelSize(n, name));
-    text.setAttribute("fill", colors[i].text);
-    text.setAttribute("stroke", colors[i].text === "#ffffff" ? "rgba(0,0,0,.35)" : "rgba(255,255,255,.35)");
+    text.setAttribute("font-size", labelSize(S, name));
+    text.setAttribute("fill", color.text);
+    text.setAttribute("stroke", color.text === "#ffffff" ? "rgba(0,0,0,.35)" : "rgba(255,255,255,.35)");
     text.setAttribute("stroke-width", "3");
     text.textContent = name;
     els.slices.appendChild(text);
@@ -131,13 +134,14 @@ function frame() {
   if (spin && n >= 2) {
     const end = spin.startAt + spin.durationMs;
     const t = reducedMotion && serverNow() < end ? spin.startAt : serverNow();
-    rotation = rotationAt(spin, n, t);
+    const S = spinSlices(spin, n);
+    rotation = rotationAt(spin, S, t);
     const now = serverNow();
     const live = now >= spin.startAt && now < end;
     els.wheel.classList.toggle("spinning", live);
 
     // Tick the flapper each time a peg passes the arrow.
-    const pegIndex = Math.floor(rotation / (360 / n));
+    const pegIndex = Math.floor(rotation / (360 / S));
     if (live && lastPegIndex !== null && pegIndex !== lastPegIndex) flap = Math.min(28, flap + 16);
     lastPegIndex = pegIndex;
 
@@ -163,8 +167,7 @@ function showSpinning() {
 
 function announce(spin, rotation) {
   announcedSpin = spin.id;
-  const n = state.names.length;
-  const name = state.names[sliceAtArrow(rotation, n)] ?? state.names[spin.winnerIndex];
+  const name = nameForSlice(state.names, spin.winnerIndex);
   const slipped = spin.style === "slip";
   els.result.textContent = resultMessage(spin, name);
   els.result.classList.toggle("slipped", slipped);
@@ -190,7 +193,7 @@ function renderPanel() {
 
   const colors = n >= 2 ? sliceColors(n) : [];
   const counted = state.spin && announcedSpin === state.spin.id && state.spin.style !== "slip";
-  const winner = counted ? state.spin.winnerIndex : -1;
+  const winner = counted ? state.spin.winnerIndex % n : -1;
   els.namesList.replaceChildren(...state.names.map((name, i) => {
     const li = document.createElement("li");
     const sw = document.createElement("span");
@@ -202,6 +205,10 @@ function renderPanel() {
     li.classList.toggle("winner", i === winner);
     return li;
   }));
+  if (n >= 2) {
+    const S = sliceCount(n);
+    els.slicesInfo.textContent = `${S} slices on the wheel, ${S / n} for each name`;
+  }
   updateCount();
 }
 
