@@ -97,6 +97,7 @@ function drawWheel(names) {
     text.setAttribute("stroke-width", "3");
     text.textContent = name;
     els.slices.appendChild(text);
+    fitLabel(text, LABEL_ROOM);
 
     const [px, py] = polar(R_SLICE - 6, i * w);
     const peg = document.createElementNS(SVG, "circle");
@@ -105,6 +106,19 @@ function drawWheel(names) {
     els.pegs.appendChild(peg);
   });
 }
+
+// Room for a name between the rim and the gold hub (radius 38), with a little margin.
+const LABEL_ROOM = R_SLICE - 18 - 38 - 10;
+function fitLabel(text, room) {
+  let len = 0;
+  try { len = text.getComputedTextLength(); } catch { return; }
+  if (len > room) {
+    const size = parseFloat(text.getAttribute("font-size"));
+    text.setAttribute("font-size", Math.max(9, size * (room / len)).toFixed(1));
+  }
+}
+// Web fonts can arrive after the first draw and are wider than the fallback: redraw to re-fit.
+document.fonts?.ready.then(() => { drawnKey = ""; drawWheel(state.names); });
 
 // ---- Animation: same frame on every screen ----
 let lastPegIndex = null;
