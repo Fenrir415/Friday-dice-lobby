@@ -67,6 +67,17 @@ body {
 .spin-btn:active:not(:disabled) { transform: translateY(5px); box-shadow: 0 2px 0 #7a0c1b; }
 .spin-btn:disabled { filter: grayscale(.6) brightness(.7); cursor: default; }
 
+.sound-btn {
+  font: 700 15px var(--body);
+  color: var(--bone);
+  background: rgba(255,255,255,.06);
+  border: 1px solid #4b3d66;
+  border-radius: 999px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.sound-btn.tap { border-color: #ffd84d; color: #ffd84d; }
+
 .panel h1 { font: 400 clamp(30px, 3.6vw, 42px)/1.1 var(--display); color: var(--bone); margin: 6px 0 16px; }
 .names { margin: 0 0 14px; padding: 0; list-style: none; display: grid; gap: 6px; }
 .names li {

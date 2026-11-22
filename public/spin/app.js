@@ -1,6 +1,7 @@
 import { rotationAt, sliceAtArrow, resultMessage, sliceCount, nameForSlice, spinSlices } from "/spin/wheel-math.mjs";
 import { sliceColors, labelSize } from "/spin/wheel-look.mjs";
 import { createClock } from "/spin/clock.mjs";
+import { createSound } from "/shared/sound.js";
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -8,8 +9,26 @@ const els = {
   pointer: $("pointer"), result: $("result"), spinBtn: $("spinBtn"),
   namesView: $("namesView"), namesList: $("namesList"), editBtn: $("editBtn"),
   editor: $("editor"), namesInput: $("namesInput"), count: $("count"), acceptBtn: $("acceptBtn"), cancelBtn: $("cancelBtn"),
-  note: $("note"), slicesInfo: $("slicesInfo"),
+  note: $("note"), slicesInfo: $("slicesInfo"), soundBtn: $("soundBtn"),
 };
+
+// ---- Sound ----
+const sound = createSound();
+window.__gameNightSound = sound; // handy for checking sounds from the browser console
+// Browsers only allow audio after a tap/click/key on the page.
+for (const ev of ["pointerdown", "keydown"]) window.addEventListener(ev, () => sound.unlock(), { capture: true });
+function renderSoundBtn() {
+  const label = !sound.enabled ? "🔇 Sound off" : sound.needsTap ? "🔈 Tap for sound" : "🔊 Sound on";
+  if (els.soundBtn.textContent !== label) els.soundBtn.textContent = label;
+  els.soundBtn.classList.toggle("tap", sound.enabled && sound.needsTap);
+  els.soundBtn.setAttribute("aria-pressed", String(sound.enabled));
+}
+els.soundBtn.addEventListener("click", () => {
+  if (!sound.enabled) sound.setEnabled(true);
+  else if (sound.needsTap) sound.unlock();
+  else sound.setEnabled(false);
+  setTimeout(renderSoundBtn, 50);
+});
 const SVG = "http://www.w3.org/2000/svg";
 const R_SLICE = 214;
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -142,7 +161,7 @@ function frame() {
 
     // Tick the flapper each time a peg passes the arrow.
     const pegIndex = Math.floor(rotation / (360 / S));
-    if (live && lastPegIndex !== null && pegIndex !== lastPegIndex) flap = Math.min(28, flap + 16);
+    if (live && lastPegIndex !== null && pegIndex !== lastPegIndex) { flap = Math.min(28, flap + 16); sound.tick(); }
     lastPegIndex = pegIndex;
 
     if (now < spin.startAt) showCountdown(spin.startAt - now);
@@ -154,6 +173,7 @@ function frame() {
   els.spinner.setAttribute("transform", `rotate(${rotation})`);
   flap *= 0.82;
   els.pointer.style.transform = `rotate(${-flap}deg)`;
+  renderSoundBtn();
   requestAnimationFrame(frame);
 }
 
@@ -175,6 +195,7 @@ function announce(spin, rotation) {
   if (fresh) {
     els.result.classList.remove("pop"); void els.result.offsetWidth; els.result.classList.add("pop");
     if (!slipped) { els.wheel.classList.remove("won"); void els.wheel.getBoundingClientRect(); els.wheel.classList.add("won"); }
+    if (slipped) sound.slip(); else sound.win();
   }
   renderPanel();
 }
