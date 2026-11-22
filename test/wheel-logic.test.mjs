@@ -85,3 +85,8 @@ test("result message: slip says spin again; others say landed on", () => {
   assert.equal(resultMessage({ style: "normal" }, "Valheim"), "Landed on: Valheim");
   assert.equal(resultMessage({ style: "nudge" }, "WoW"), "Landed on: WoW");
 });
+
+import { FUNNY_CHANCE as FC } from "../lib/wheel-logic.mjs";
+test("funny spins come up 1 in 3 (when the last spin wasn't funny)", () => {
+  assert.equal(FC, 1 / 3);
+});

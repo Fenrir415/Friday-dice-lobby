@@ -17,7 +17,7 @@ Make a shared wheel everyone opens on their own device, in the same app as Dice.
 - Paths: `/` picker, `/dice` (unchanged game + "← Games" link), `/spin`.
 - 2–12 names, ≤24 chars each.
 - Server picks winner + spin plan; all screens play it from a shared start time 1.5 s ahead; late joiners join mid-spin.
-- Funny spin ~1 in 6, never twice in a row: crawl (barely tips over), rocket, stop-then-nudge.
+- Funny spin 1 in 3 (raised by Douglas 2026-11-21; ~1 in 4 overall), never twice in a row: crawl (barely tips over), rocket, stop-then-nudge.
 - Concurrent SPIN presses: one wins (conditional write); others get "Someone just spun".
 - Names persist on the server. No sound, no history, no host mode.
 - Picker is generated from one games list (`public/games.js`); each game in its own folder; shared base styles.
