@@ -95,6 +95,6 @@ test("seatSlots: always 4 seats, filled in join order", () => {
 });
 
 test("tabTitle shows seat count only when someone is seated", () => {
-  assert.equal(tabTitle([]), "Friday Night Dice");
-  assert.equal(tabTitle([p("A", []), p("B", [])]), "(2/4) Friday Night Dice");
+  assert.equal(tabTitle([]), "Game Night Dice");
+  assert.equal(tabTitle([p("A", []), p("B", [])]), "(2/4) Game Night Dice");
 });

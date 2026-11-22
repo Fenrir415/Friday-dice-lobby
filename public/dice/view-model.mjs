@@ -83,5 +83,5 @@ export function seatSlots(players, myId) {
 }
 
 export function tabTitle(players) {
-  return players.length ? `(${players.length}/${MAX_PLAYERS}) Friday Night Dice` : "Friday Night Dice";
+  return players.length ? `(${players.length}/${MAX_PLAYERS}) Game Night Dice` : "Game Night Dice";
 }
