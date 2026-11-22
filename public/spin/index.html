@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spin · Friday Night</title>
+  <meta name="description" content="Put names on the wheel. Everyone watches it spin.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎡</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/base.css">
+  <link rel="stylesheet" href="/spin/spin.css">
+</head>
+<body>
+  <a class="back" href="/">← Games</a>
+  <main class="stage">
+    <section class="wheel-area" aria-label="Wheel">
+      <div class="wheel-wrap">
+        <svg class="wheel" id="wheel" viewBox="-260 -270 520 530" role="img" aria-label="Spinning wheel">
+          <defs>
+            <radialGradient id="chrome" cx="35%" cy="30%" r="80%">
+              <stop offset="0" stop-color="#ffffff"/>
+              <stop offset=".35" stop-color="#cfd6de"/>
+              <stop offset=".7" stop-color="#8a96a3"/>
+              <stop offset="1" stop-color="#e9eef3"/>
+            </radialGradient>
+            <radialGradient id="hub" cx="35%" cy="30%" r="75%">
+              <stop offset="0" stop-color="#fff6c8"/>
+              <stop offset=".5" stop-color="#f2c230"/>
+              <stop offset="1" stop-color="#a87412"/>
+            </radialGradient>
+            <radialGradient id="sheen" cx="40%" cy="25%" r="75%">
+              <stop offset="0" stop-color="#fff" stop-opacity=".28"/>
+              <stop offset=".6" stop-color="#fff" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle r="250" fill="url(#chrome)"/>
+          <circle r="236" fill="#1b1b2a"/>
+          <g id="bulbs"></g>
+          <g id="spinner">
+            <g id="slices"></g>
+            <g id="pegs"></g>
+          </g>
+          <circle r="214" fill="url(#sheen)" pointer-events="none"/>
+          <circle r="38" fill="url(#hub)" stroke="#7a5410" stroke-width="3"/>
+          <path d="M0 -20 L5.9 -8.1 L19 -6.2 L9.5 3.1 L11.8 16.2 L0 10 L-11.8 16.2 L-9.5 3.1 L-19 -6.2 L-5.9 -8.1 Z" fill="#fff8de" opacity=".9"/>
+          <g id="pointer" class="pointer">
+            <path d="M0 -206 L-20 -262 L20 -262 Z" fill="#e8243c" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+            <circle cy="-254" r="7" fill="url(#chrome)" stroke="#7a828c" stroke-width="2"/>
+          </g>
+        </svg>
+      </div>
+      <p class="result" id="result" role="status" aria-live="polite"></p>
+      <button class="spin-btn" id="spinBtn" type="button">SPIN</button>
+    </section>
+
+    <section class="panel" aria-label="Names on the wheel">
+      <h1>Spin the wheel</h1>
+
+      <div id="namesView" hidden>
+        <ol class="names" id="namesList"></ol>
+        <button class="btn ghost" id="editBtn" type="button">Edit names</button>
+      </div>
+
+      <form class="editor" id="editor" hidden>
+        <label for="namesInput">Names on the wheel, one per line (2 to 12)</label>
+        <textarea id="namesInput" rows="7" spellcheck="false" placeholder="World of Warcraft&#10;Valheim&#10;Age of Empires 4&#10;Enshrouded"></textarea>
+        <p class="count" id="count"></p>
+        <div class="row">
+          <button class="btn" id="acceptBtn" type="submit">Accept</button>
+          <button class="btn ghost" id="cancelBtn" type="button" hidden>Cancel</button>
+        </div>
+      </form>
+
+      <p class="note" id="note" role="alert"></p>
+      <p class="hint">Everyone with the link sees the same wheel. Anyone can change the names or spin when it's stopped.</p>
+    </section>
+  </main>
+  <script type="module" src="/spin/app.js"></script>
+</body>
+</html>
