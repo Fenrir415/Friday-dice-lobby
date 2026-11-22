@@ -98,3 +98,21 @@ test("unknown action", async () => {
   const { post } = setup();
   assert.equal((await post({ action: "nope" })).status, 400);
 });
+
+test("a store that doesn't confirm the write is treated as a failed write (fail safe)", async () => {
+  const s = etagStore();
+  const silent = { ...s, setJSON: async (k, v, o) => { await s.setJSON(k, v, o); return undefined; } };
+  const h = createWheelHandler({ store: silent, now: () => 1 });
+  const r = await h(new Request("http://x/api/wheel", { method: "POST", body: JSON.stringify({ action: "setNames", names: ["a", "b"] }) }));
+  assert.equal(r.status, 409);
+});
+
+test("next spin starts from where the last one stopped", async () => {
+  const { post, clock } = setup();
+  await post({ action: "setNames", names: ["a", "b", "c"] });
+  const first = (await post({ action: "spin" })).body.spin;
+  clock.t = first.startAt + first.durationMs + 10;
+  const second = (await post({ action: "spin" })).body.spin;
+  const { finalRotation } = await import("../public/spin/wheel-math.mjs");
+  assert.equal(second.fromAngle, ((finalRotation(first, 3) % 360) + 360) % 360);
+});

@@ -54,3 +54,16 @@ test("sliceAtArrow wraps correctly", () => {
   assert.equal(sliceAtArrow(1, 4), 3);
   assert.equal(sliceAtArrow(360 * 3 + 1, 4), 3);
 });
+
+test("a spin starting from a resting angle begins there and still lands on the winner", () => {
+  for (let k = 0; k < 300; k++) {
+    const n = 2 + (k % 11);
+    const s = { ...planSpin({ names: Array.from({ length: n }, (_, i) => "n" + i), rng: Math.random, now: 0 }), fromAngle: Math.random() * 360 };
+    assert.equal(rotationAt(s, n, s.startAt - 100), s.fromAngle);
+    assert.equal(rotationAt(s, n, s.startAt), s.fromAngle);
+    assert.equal(sliceAtArrow(rotationAt(s, n, s.startAt + s.durationMs), n), s.winnerIndex);
+    assert.ok(finalRotation(s, n) - s.fromAngle >= s.turns * 360);
+    let prev = -Infinity;
+    for (let t = s.startAt; t <= s.startAt + s.durationMs; t += 50) { const r = rotationAt(s, n, t); assert.ok(r >= prev - 1e-9); prev = r; }
+  }
+});

@@ -1,5 +1,6 @@
 import { rotationAt, sliceAtArrow } from "/spin/wheel-math.mjs";
 import { sliceColors, labelSize } from "/spin/wheel-look.mjs";
+import { createClock } from "/spin/clock.mjs";
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -21,17 +22,8 @@ let firstLoad = true;
 let busy = false;
 
 // ---- Server clock: keep every screen on the same timeline ----
-let clockOffset = 0;
-let bestRtt = Infinity;
-const serverNow = () => Date.now() + clockOffset;
-function learnClock(serverTime, sentAt, gotAt) {
-  const rtt = gotAt - sentAt;
-  // Trust the fastest round trip we've seen (least network delay), but let it age.
-  if (rtt <= bestRtt * 1.5 || !Number.isFinite(bestRtt)) {
-    bestRtt = Math.min(bestRtt, rtt);
-    clockOffset = serverTime + rtt / 2 - gotAt;
-  }
-}
+const clock = createClock();
+const serverNow = () => clock.now();
 
 async function api(body) {
   const sentAt = Date.now();
@@ -39,7 +31,7 @@ async function api(body) {
     ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }
     : { cache: "no-store" });
   const data = await res.json();
-  if (typeof data.serverNow === "number") learnClock(data.serverNow, sentAt, Date.now());
+  if (typeof data.serverNow === "number") clock.learn(data.serverNow, sentAt, Date.now());
   return { ok: res.ok, data };
 }
 
