@@ -29,6 +29,7 @@ export function sliceAtArrow(rotation, n) {
 const MOTIONS = {
   normal: (p, D) => D * easeOutCubic(p),
   rocket: (p, D) => D * easeOutQuart(p),
+  slip: (p, D) => D * easeOutCubic(p),
   crawl: (p, D) => D * easeOutQuint(p),
   nudge: (p, D, w, spin) => {
     // Stop in the middle of the slice just before the winner, hold, then nudge forward.
@@ -47,4 +48,9 @@ export function rotationAt(spin, n, t) {
   if (p >= 1) return F;
   if (p <= 0) return from;
   return from + (MOTIONS[spin.style] ?? MOTIONS.normal)(p, F - from, 360 / n, spin);
+}
+
+// What everyone sees when the wheel stops.
+export function resultMessage(spin, name) {
+  return spin.style === "slip" ? "Your finger slipped!! Spin again!" : `Landed on: ${name}`;
 }

@@ -1,4 +1,4 @@
-import { rotationAt, sliceAtArrow } from "/spin/wheel-math.mjs";
+import { rotationAt, sliceAtArrow, resultMessage } from "/spin/wheel-math.mjs";
 import { sliceColors, labelSize } from "/spin/wheel-look.mjs";
 import { createClock } from "/spin/clock.mjs";
 
@@ -154,22 +154,24 @@ function frame() {
 }
 
 function showCountdown(ms) {
-  els.result.classList.remove("pop");
+  els.result.classList.remove("pop", "slipped");
   els.result.textContent = ms > 700 ? "Get ready…" : "Here we go!";
 }
 function showSpinning() {
-  if (els.result.textContent !== "Spinning…") { els.result.classList.remove("pop"); els.result.textContent = "Spinning…"; }
+  if (els.result.textContent !== "Spinning…") { els.result.classList.remove("pop", "slipped"); els.result.textContent = "Spinning…"; }
 }
 
 function announce(spin, rotation) {
   announcedSpin = spin.id;
   const n = state.names.length;
   const name = state.names[sliceAtArrow(rotation, n)] ?? state.names[spin.winnerIndex];
-  els.result.textContent = `Landed on: ${name}`;
+  const slipped = spin.style === "slip";
+  els.result.textContent = resultMessage(spin, name);
+  els.result.classList.toggle("slipped", slipped);
   const fresh = !firstLoad && serverNow() - (spin.startAt + spin.durationMs) < 4000;
   if (fresh) {
     els.result.classList.remove("pop"); void els.result.offsetWidth; els.result.classList.add("pop");
-    els.wheel.classList.remove("won"); void els.wheel.getBoundingClientRect(); els.wheel.classList.add("won");
+    if (!slipped) { els.wheel.classList.remove("won"); void els.wheel.getBoundingClientRect(); els.wheel.classList.add("won"); }
   }
   renderPanel();
 }
@@ -187,7 +189,8 @@ function renderPanel() {
   els.spinBtn.disabled = busy || spinningNow || n < 2 || showEditor;
 
   const colors = n >= 2 ? sliceColors(n) : [];
-  const winner = state.spin && announcedSpin === state.spin.id ? state.spin.winnerIndex : -1;
+  const counted = state.spin && announcedSpin === state.spin.id && state.spin.style !== "slip";
+  const winner = counted ? state.spin.winnerIndex : -1;
   els.namesList.replaceChildren(...state.names.map((name, i) => {
     const li = document.createElement("li");
     const sw = document.createElement("span");

@@ -21,7 +21,10 @@ const store = {
   async list({ prefix = "" } = {}) { return { blobs: [...m.keys()].filter((k) => k.startsWith(prefix)).map((key) => ({ key })) }; },
 };
 const handler = createHandler({ store });
-const wheel = createWheelHandler({ store });
+// Local testing only: FORCE_SLIP=1 makes every allowed funny spin a slip.
+const forced = process.env.FORCE_SLIP ? (() => { const v = [0, 0.99]; let i = 0; return () => (i < 2 ? v[i++] : Math.random()); }) : null;
+const wheel = createWheelHandler({ store, rng: forced ? (...a) => (forced.cur ??= forced())(...a) : Math.random });
+if (forced) setInterval(() => { forced.cur = forced(); }, 500);
 const routes = { "/api/lobby": handler, "/api/wheel": wheel };
 const types = { ".svg": "image/svg+xml", ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".mjs": "text/javascript" };
 const port = Number(process.argv[2] ?? 8888);

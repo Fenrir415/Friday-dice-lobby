@@ -35,8 +35,13 @@ test("planSpin: shape, start lead, winner in range", () => {
     assert.equal(s.startAt, 5000 + LEAD_MS);
     assert.ok(Number.isInteger(s.winnerIndex) && s.winnerIndex >= 0 && s.winnerIndex < 5);
     assert.ok(s.landFraction > 0 && s.landFraction < 1);
-    assert.ok(s.durationMs >= 3000 && s.durationMs <= 12000);
-    assert.ok(s.turns >= 3);
+    if (s.style === "slip") {
+      assert.equal(s.turns, 0);
+      assert.ok(s.durationMs >= 1000 && s.durationMs <= 2500);
+    } else {
+      assert.ok(s.durationMs >= 3000 && s.durationMs <= 12000);
+      assert.ok(s.turns >= 3);
+    }
     assert.ok(typeof s.id === "string" && s.id.length > 4);
     if (s.style === "crawl") assert.ok(s.landFraction < 0.08);
   }
@@ -49,4 +54,34 @@ test("spinning window", () => {
   assert.equal(isSpinning(s, spinEndsAt(s) - 1), true);
   assert.equal(isSpinning(s, spinEndsAt(s)), false);
   assert.equal(isSpinning(null, 0), false);
+});
+
+import { FUNNY_STYLES as FS } from "../lib/wheel-logic.mjs";
+import { finalRotation as finalRot, sliceAtArrow as atArrow, resultMessage } from "../public/spin/wheel-math.mjs";
+
+test("slip is one of the funny spins", () => {
+  assert.ok(FS.includes("slip"));
+});
+
+test("slip: barely moves, landing on the very next slice from where the wheel rests", () => {
+  const names = ["a", "b", "c", "d", "e"];
+  const n = names.length, w = 360 / n;
+  for (let k = 0; k < 200; k++) {
+    const fromAngle = Math.random() * 360;
+    const pickSlip = FS.indexOf("slip") / FS.length + 0.001;
+    const s = planSpin({ names, fromAngle, rng: seq([0, pickSlip, Math.random(), Math.random(), Math.random(), Math.random()]), now: 0 });
+    assert.equal(s.style, "slip");
+    assert.equal(s.turns, 0);
+    const start = atArrow(fromAngle, n);
+    assert.equal(s.winnerIndex, (start - 1 + n) % n, "next slice in the direction the wheel turns");
+    const moved = finalRot(s, n) - fromAngle;
+    assert.ok(moved > 0 && moved < 2 * w, `moved ${moved}`);
+    assert.ok(s.durationMs <= 2500);
+  }
+});
+
+test("result message: slip says spin again; others say landed on", () => {
+  assert.equal(resultMessage({ style: "slip" }, "Valheim"), "Your finger slipped!! Spin again!");
+  assert.equal(resultMessage({ style: "normal" }, "Valheim"), "Landed on: Valheim");
+  assert.equal(resultMessage({ style: "nudge" }, "WoW"), "Landed on: WoW");
 });

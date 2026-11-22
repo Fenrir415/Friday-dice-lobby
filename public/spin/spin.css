@@ -46,6 +46,9 @@ body {
   text-shadow: 0 3px 0 #8c1c2b, 0 0 18px rgba(255, 210, 90, .45);
 }
 .result.pop { animation: pop .55s cubic-bezier(.2, .9, .3, 1.5); }
+.result.slipped { color: #ff8fa0; text-shadow: 0 3px 0 #3a0a14, 0 0 18px rgba(255, 90, 120, .4); }
+.result.slipped.pop { animation: pop .55s cubic-bezier(.2, .9, .3, 1.5), wobble .5s .55s ease-in-out 2; }
+@keyframes wobble { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-4deg); } 75% { transform: rotate(4deg); } }
 .result small { display: block; font: 700 15px var(--body); color: var(--muted); text-shadow: none; }
 @keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
