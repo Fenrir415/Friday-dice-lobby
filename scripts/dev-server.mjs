@@ -6,9 +6,17 @@ import { createHandler } from "../lib/lobby-handler.mjs";
 import { createWheelHandler } from "../lib/wheel-handler.mjs";
 
 const m = new Map();
+const etags = new Map();
+let version = 0;
 const store = {
   async get(k) { return m.has(k) ? structuredClone(m.get(k)) : null; },
-  async setJSON(k, v) { m.set(k, structuredClone(v)); },
+  async getWithMetadata(k) { return m.has(k) ? { data: structuredClone(m.get(k)), etag: etags.get(k), metadata: {} } : null; },
+  async setJSON(k, v, { onlyIfMatch, onlyIfNew } = {}) {
+    if (onlyIfNew && m.has(k)) return { modified: false };
+    if (onlyIfMatch && etags.get(k) !== onlyIfMatch) return { modified: false };
+    m.set(k, structuredClone(v)); etags.set(k, String(++version));
+    return { modified: true };
+  },
   async delete(k) { m.delete(k); },
   async list({ prefix = "" } = {}) { return { blobs: [...m.keys()].filter((k) => k.startsWith(prefix)).map((key) => ({ key })) }; },
 };
